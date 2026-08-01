@@ -21,9 +21,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           # Tailwind v4's oxide engine requires Node 20+.
           node-version: 22
@@ -31,14 +31,18 @@ jobs:
 
       - run: npm ci
 
+      # `next typegen` (inside this script) writes next-env.d.ts, which is
+      # gitignored and therefore absent on a fresh checkout. It carries the
+      # `next/image-types/global` reference that makes `import x from
+      # "…/foo.png"` type-check, so tsc fails without it.
       - run: npm run typecheck
 
       # `output: "export"` in next.config.ts writes the site to ./out
       - run: npm run build
 
-      - uses: actions/configure-pages@v5
+      - uses: actions/configure-pages@v6
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: ./out
 
@@ -50,4 +54,4 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
