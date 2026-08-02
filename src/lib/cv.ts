@@ -38,25 +38,25 @@ export const summary =
 export const experience: CvEntry[] = [
   {
     period: "2026.01 — Present",
-    title: "AI Engineer",
+    title: "AI Engineer (전문연구요원)",
     org: "Nurimedia (DBpia)",
-    location: "Seoul, Korea",
+    location: "Korea",
     logo: "/images/logos/dbpia_logo.webp",
     points: [
       "실시간 Layout Detection 및 OCR 파이프라인 서빙",
-      "참고문헌 추출 자동화로 수작업 처리량 감소",
-      "TODO: 정량적 성과를 숫자와 함께 한 줄씩 적어주세요",
+      "VLM 기반 문서 정보 추출 추출 에이전트 구축을 통한 수작업 처리량 감소",
+      "대량의 내부 문서 구조화 파이프라인을 통한 DBpia 정보화",
     ],
   },
 ];
 
 export const education: CvEntry[] = [
   {
-    period: "2019 — 2023",
-    title: "B.S. in Computer Science",
-    org: "TODO: 학교명",
+    period: "2020 — 2024",
+    title: "B.S. in Computer Science and Engineering",
+    org: "성균관대학교",
     location: "Korea",
-    logo: "/images/logos/university.svg",
+    logo: "/images/logos/school_logo.jpg",
   },
   
 ];

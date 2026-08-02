@@ -128,7 +128,7 @@ npm run dev     # http://localhost:3000
 
 `content/blog/<slug>.mdx` 를 만들면 파일명이 그대로 URL이 됩니다.
 
-```mdx
+```mdx`
 ---
 title: "글 제목"
 summary: "목록에 노출되는 한 줄 요약."
