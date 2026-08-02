@@ -1,3 +1,4 @@
+import { supportsTransparency } from "@/lib/image-alpha";
 import { getPublicImageSize } from "@/lib/public-image-size";
 
 /**
@@ -18,16 +19,16 @@ const PADDING = 4;
 /**
  * Logo above a CV entry.
  *
- * Sits on a white tile. Logos are drawn for light backgrounds, and plenty ship
- * as JPEG, which cannot be transparent at all — so a dark-inked mark either
- * disappears against the dark theme or drags a white rectangle around with it.
- * A deliberate tile makes both cases look the same and stay legible. In light
- * mode the tile is white-on-white, so all that shows is the hairline.
+ * A transparent logo is drawn as-is, straight on the page. One that cannot be
+ * transparent — a JPEG, or a PNG exported without an alpha channel — is put on
+ * a white tile instead, so the opaque rectangle it carries reads as deliberate
+ * rather than as a mistake against the dark theme. Which case applies is read
+ * from the file header at build time, not guessed from the extension.
  *
  * Widths differ per row, so this goes above the title rather than beside it;
  * otherwise each row's text would start at a different x.
  *
- * The intrinsic size is read off disk at build time, so the exact box is
+ * The intrinsic size is read off disk at build time too, so the exact box is
  * reserved before the file loads and the row never shifts.
  */
 export function EntryLogo({ src, org }: { src?: string; org: string }) {
@@ -37,15 +38,35 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
 
   // Scale to fit inside the box, never up past its natural size.
   const scale = intrinsic
-    ? Math.min(
-        MAX_WIDTH / intrinsic.width,
-        MAX_HEIGHT / intrinsic.height,
-        1,
-      )
+    ? Math.min(MAX_WIDTH / intrinsic.width, MAX_HEIGHT / intrinsic.height, 1)
     : null;
 
-  const width = intrinsic && scale ? Math.round(intrinsic.width * scale) : undefined;
-  const height = intrinsic && scale ? Math.round(intrinsic.height * scale) : undefined;
+  const width =
+    intrinsic && scale ? Math.round(intrinsic.width * scale) : undefined;
+  const height =
+    intrinsic && scale ? Math.round(intrinsic.height * scale) : undefined;
+
+  const image = (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={src}
+      // The organisation is written next to this in text, so the logo is
+      // decorative — announcing it again would just be noise.
+      alt=""
+      aria-hidden="true"
+      loading="lazy"
+      decoding="async"
+      title={org}
+      width={width}
+      height={height}
+      style={{ width: width ?? "auto", height: height ?? MAX_HEIGHT }}
+      className="object-contain"
+    />
+  );
+
+  if (supportsTransparency(src)) {
+    return <span className="mb-2.5 inline-flex">{image}</span>;
+  }
 
   return (
     <span
@@ -56,21 +77,7 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
         height: height ? height + PADDING * 2 : undefined,
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={src}
-        // The organisation is written next to this in text, so the logo is
-        // decorative — announcing it again would just be noise.
-        alt=""
-        aria-hidden="true"
-        loading="lazy"
-        decoding="async"
-        title={org}
-        width={width}
-        height={height}
-        style={{ width: width ?? "auto", height: height ?? MAX_HEIGHT }}
-        className="object-contain"
-      />
+      {image}
     </span>
   );
 }
