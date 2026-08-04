@@ -18,19 +18,50 @@ export type CvEntry = {
    * Omit the field and the row simply has no logo.
    */
   logo?: string;
+  /**
+   * Render height in px, overriding the 28px default.
+   *
+   * Needed because equal canvas height does not mean equal apparent size. A
+   * one-line wordmark fills its canvas with letterforms; a university lockup
+   * stacks an emblem over two lines of type, so at the same height its text is
+   * a third the size and unreadable. No ratio rule fixes that — the difference
+   * is in what the image contains. Nudge it by eye.
+   */
+  logoHeight?: number;
   /** Rendered as a bulleted list. Keep each line to one accomplishment. */
   points?: string[];
   /** Shown on project entries as a link on the title. */
   href?: string;
 };
 
-export type CvPublication = {
-  authors: string;
+/**
+ * A paper or project, rendered as a figure on the left with its details on the
+ * right — the layout academic homepages use, because a paper's teaser figure
+ * says more at a glance than its title does.
+ */
+export type CvWork = {
   title: string;
+  /**
+   * Full author list as one string, in publication order. Your own name is
+   * bolded automatically — see `highlightAuthors`. Mark co-first authorship
+   * with an asterisk the way the venue does: "Jane Doe*, John Roe*".
+   */
+  authors?: string;
+  /** The italic line: "CVPR 2026", "Preprint", "개인 프로젝트 · 2025". */
   venue: string;
-  year: string;
-  href?: string;
+  /** Optional callout after the venue, e.g. "Oral, top 3%". Rendered accented. */
+  note?: string;
+  /** Teaser figure under `public/`. Omit it and the text spans full width. */
+  thumb?: string;
+  /** Trailing link row: Project page, Code, arXiv, demo, whatever applies. */
+  links?: { label: string; href: string }[];
 };
+
+/**
+ * Spellings of your own name to render bold in author lists. Include every
+ * variant you publish under — hyphenation and romanisation differ by venue.
+ */
+export const highlightAuthors = ["Byungjoon Lee", "Byung-Joon Lee", "이병준"];
 
 export const summary =
   "검색 시스템과 언어 데이터를 다루는 엔지니어입니다. 학술 데이터베이스 환경에서 검색 품질 개선과 데이터 파이프라인 구축을 맡고 있습니다.";
@@ -51,48 +82,70 @@ export const experience: CvEntry[] = [
 ];
 
 export const education: CvEntry[] = [
-  {
-    period: "2020 — 2024",
-    title: "B.S. in Computer Science and Engineering",
+    {
+    period: "2024 — 2026",
+    title: "M.S. in Computer Science and Engineering",
     org: "성균관대학교",
     location: "Korea",
-    logo: "/images/logos/school_logo.png",
+        logo: "/images/logos/school_logo.png",
+    logoHeight: 44,        // 기본값 28
   },
+  {
+    period: "2020 — 2024",
+    title: "B.S. in Mathematics & Applied Artificial Intelligence",
+    org: "성균관대학교",
+    location: "Korea",
+  },
+
+
   
 ];
 
-export const projects: CvEntry[] = [
+export const projects: CvWork[] = [
   {
-    period: "2025",
     title: "TODO: 프로젝트 이름",
-    org: "개인 프로젝트",
-    logo: "/images/logos/project.svg",
-    href: "https://github.com/",
-    points: [
-      "무엇을 만들었고 어떤 문제를 풀었는지 한 줄",
-      "쓴 기술과, 가능하면 규모나 결과를 숫자로",
+    venue: "개인 프로젝트 · 2025",
+    thumb: "/images/works/placeholder-wide.png",
+    links: [
+      { label: "Code", href: "https://github.com/powerpowe" },
+      { label: "Demo", href: "https://example.com" },
     ],
   },
 ];
 
 export const skills: { group: string; items: string[] }[] = [
-  { group: "Languages", items: ["Python", "TypeScript", "SQL", "Java"] },
-  {
-    group: "Search & Data",
-    items: ["Elasticsearch", "OpenSearch", "PostgreSQL", "Airflow"],
+  { group: "MLops", 
+    items: ["Prefect", "Phoenix", "FastAPI"] 
   },
-  { group: "ML / NLP", items: ["PyTorch", "Hugging Face", "sentence-transformers"] },
-  { group: "Infra", items: ["Docker", "AWS", "GitHub Actions"] },
+  {
+    group: "DL & ML",
+    items: ["PyTorch", "OpenCV", "Pandas", "Onnxruntime", "scikit-learn", "matplotlib"],
+  },
+  { 
+    group: "LLM", 
+    items: ["vLLM", "Hugging Face", "transformers", "openai"] },
+  { group: "Infra", 
+    items: ["Docker", "Jenkins", "conda", "uv"] 
+  },
+  { group: "Others", 
+    items: ["PyMuPDF", "selenium", "beautifulsoup"] 
+  },
 ];
 
-export const publications: CvPublication[] = [
-  // {
-  //   authors: "Lee, B., et al.",
-  //   title: "Paper title",
-  //   venue: "Conference",
-  //   year: "2025",
-  //   href: "https://…",
-  // },
+export const publications: CvWork[] = [
+  // TODO: 본인 논문으로 교체하세요. 이 항목은 모든 필드 사용 예시입니다.
+  {
+    title: "TODO: 논문 제목",
+    authors: "First Author*, Byungjoon Lee*, Third Author",
+    venue: "Preprint",
+    note: "Oral, top 3%",
+    thumb: "/images/works/placeholder-wide.png",
+    links: [
+      { label: "arXiv", href: "https://arxiv.org/" },
+      { label: "Code", href: "https://github.com/powerpowe" },
+      { label: "Project page", href: "https://example.com" },
+    ],
+  },
 ];
 
 export const awards: CvEntry[] = [

@@ -2,8 +2,9 @@ import { supportsTransparency } from "@/lib/image-alpha";
 import { getPublicImageSize } from "@/lib/public-image-size";
 
 /**
- * Every logo is drawn at this height, whatever its aspect ratio. Sharing a
- * baseline is what makes a row of them look aligned rather than arbitrary.
+ * Default render height. A per-entry `logoHeight` overrides it, because equal
+ * canvas height is not equal apparent size — see the note on `logoHeight` in
+ * `lib/cv.ts`.
  */
 const TARGET_HEIGHT = 28;
 
@@ -34,7 +35,15 @@ const PADDING = 4;
  * The intrinsic size is read off disk at build time too, so the exact box is
  * reserved before the file loads and the row never shifts.
  */
-export function EntryLogo({ src, org }: { src?: string; org: string }) {
+export function EntryLogo({
+  src,
+  org,
+  height: targetHeight = TARGET_HEIGHT,
+}: {
+  src?: string;
+  org: string;
+  height?: number;
+}) {
   if (!src) return null;
 
   const intrinsic = getPublicImageSize(src);
@@ -42,7 +51,7 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
   // Height first; the width cap only bites on unusually wide marks. No upscale
   // past the file's natural size.
   const scale = intrinsic
-    ? Math.min(TARGET_HEIGHT / intrinsic.height, MAX_WIDTH / intrinsic.width, 1)
+    ? Math.min(targetHeight / intrinsic.height, MAX_WIDTH / intrinsic.width, 1)
     : null;
 
   const width =
@@ -63,7 +72,7 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
       title={org}
       width={width}
       height={height}
-      style={{ width: width ?? "auto", height: height ?? TARGET_HEIGHT }}
+      style={{ width: width ?? "auto", height: height ?? targetHeight }}
       className="object-contain"
     />
   );

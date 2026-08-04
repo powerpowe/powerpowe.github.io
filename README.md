@@ -210,6 +210,44 @@ import portrait from "@public/images/portrait.jpg";   // @public → ./public
 사진 없이 가려면 [`cv/page.tsx`](src/app/(full)/cv/page.tsx) 의 `<Image>` 블록과
 import를 지우면 됩니다. `/about` 도 마찬가지입니다.
 
+### 논문 · 프로젝트 (Publications / Projects)
+
+이 두 섹션은 **왼쪽에 티저 그림, 오른쪽에 설명** 구조입니다. 논문은 제목보다
+그림이 아이디어를 빨리 전달하니까요.
+
+```ts
+// src/lib/cv.ts
+export const publications: CvWork[] = [
+  {
+    title: "논문 제목",
+    authors: "First Author*, Byungjoon Lee*, Third Author",
+    venue: "CVPR 2026",
+    note: "Oral, top 3%",                       // 선택 — 액센트 색으로 강조
+    thumb: "/images/works/teaser.png",          // 선택
+    links: [                                    // 선택
+      { label: "arXiv", href: "https://arxiv.org/abs/..." },
+      { label: "Code", href: "https://github.com/..." },
+      { label: "Project page", href: "https://..." },
+    ],
+  },
+];
+```
+
+`projects` 도 **같은 타입**입니다. `authors` 를 비우고 `venue` 에
+`"개인 프로젝트 · 2025"` 처럼 쓰면 됩니다.
+
+- **본인 이름은 자동으로 굵게** 표시됩니다. `cv.ts` 의 `highlightAuthors` 에
+  본인 이름 표기 변형을 다 적어두세요 (`"Byungjoon Lee"`, `"Byung-Joon Lee"`,
+  `"이병준"`). 학회마다 하이픈·로마자 표기가 달라서요. 공동 1저자 별표(`*`)는
+  이름에 붙은 채로 같이 굵어집니다.
+- **`links` 의 첫 항목이 제목 링크**가 됩니다.
+- 썸네일은 176px 폭으로 그려지고, 높이는 원본 비율대로 빌드 때 계산됩니다.
+  `thumb` 을 빼면 설명이 전체 폭을 씁니다.
+- `sm` 미만에서는 그림이 위, 설명이 아래로 쌓입니다.
+
+썸네일은 `public/images/works/` 에 두세요. 논문 티저는 보통 가로로 넓은
+그림이라 16:9 정도가 잘 맞습니다.
+
 ### CV의 회사·학교·프로젝트 로고
 
 [`src/lib/cv.ts`](src/lib/cv.ts) 의 각 항목에 `logo` 한 줄만 추가하면 됩니다.

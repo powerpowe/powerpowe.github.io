@@ -4,6 +4,7 @@ import Image from "next/image";
 import { EntryLogo } from "@/components/entry-logo";
 import { PrintButton } from "@/components/print-button";
 import { SectionLabel } from "@/components/section-label";
+import { WorkList } from "@/components/work-list";
 import {
   awards,
   education,
@@ -38,7 +39,11 @@ function EntryList({ entries }: { entries: CvEntry[] }) {
           </span>
 
           <div className="min-w-0">
-            <EntryLogo src={entry.logo} org={entry.org} />
+            <EntryLogo
+              src={entry.logo}
+              org={entry.org}
+              height={entry.logoHeight}
+            />
 
             <h3 className="font-display font-medium leading-snug tracking-tight">
               {entry.href ? (
@@ -156,34 +161,13 @@ export default function CvPage() {
 
       {projects.length > 0 && (
         <Section label="Projects">
-          <EntryList entries={projects} />
+          <WorkList works={projects} />
         </Section>
       )}
 
       {publications.length > 0 && (
         <Section label="Publications">
-          <ul className="space-y-6">
-            {publications.map((pub) => (
-              <li key={pub.title} className="print-break-avoid text-sm">
-                <p className="text-muted">{pub.authors}</p>
-                <p className="mt-1 font-display font-medium leading-snug tracking-tight">
-                  {pub.href ? (
-                    <a
-                      href={pub.href}
-                      className="underline decoration-hairline underline-offset-4 transition-colors hover:text-accent"
-                    >
-                      {pub.title}
-                    </a>
-                  ) : (
-                    pub.title
-                  )}
-                </p>
-                <p className="mt-1 font-label text-xs text-faint">
-                  {pub.venue}, {pub.year}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <WorkList works={publications} />
         </Section>
       )}
 
