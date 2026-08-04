@@ -44,7 +44,7 @@ export const experience: CvEntry[] = [
     logo: "/images/logos/dbpia_logo.webp",
     points: [
       "실시간 Layout Detection 및 OCR 파이프라인 서빙",
-      "VLM 기반 문서 정보 추출 추출 에이전트 구축을 통한 수작업 처리량 감소",
+      "VLM 기반 문서 정보 추출 추출 에이전트 구축 기반 AX",
       "대량의 내부 문서 구조화 파이프라인을 통한 DBpia 정보화",
     ],
   },
@@ -56,7 +56,7 @@ export const education: CvEntry[] = [
     title: "B.S. in Computer Science and Engineering",
     org: "성균관대학교",
     location: "Korea",
-    logo: "/images/logos/school_logo.jpg",
+    logo: "/images/logos/school_logo.png",
   },
   
 ];

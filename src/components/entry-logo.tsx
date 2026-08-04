@@ -2,16 +2,19 @@ import { supportsTransparency } from "@/lib/image-alpha";
 import { getPublicImageSize } from "@/lib/public-image-size";
 
 /**
- * Bounding box the logo is scaled to fit inside, in px.
- *
- * Fitting a *box* rather than matching a single dimension is what keeps mixed
- * logo shapes at comparable visual weight. Matching height alone made a
- * 6.67:1 wordmark 160px wide while a square crest stayed 24px — same height,
- * wildly different mass. Constraining both lets the wide one use the width
- * budget and the square one use the height budget.
+ * Every logo is drawn at this height, whatever its aspect ratio. Sharing a
+ * baseline is what makes a row of them look aligned rather than arbitrary.
  */
-const MAX_WIDTH = 170;
-const MAX_HEIGHT = 32;
+const TARGET_HEIGHT = 28;
+
+/**
+ * Overflow guard, not a design target. Wide wordmarks are the reason it exists
+ * — at 7.5:1 a logo already spans this much — and anything wider gets scaled
+ * down below `TARGET_HEIGHT` rather than running across the column. Keep it
+ * loose enough that real logos hit the full height; the widest here is DBpia's
+ * 6.67:1, which lands at 187px.
+ */
+const MAX_WIDTH = 210;
 
 /** Breathing room between the logo and the tile edge, in px. */
 const PADDING = 4;
@@ -36,9 +39,10 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
 
   const intrinsic = getPublicImageSize(src);
 
-  // Scale to fit inside the box, never up past its natural size.
+  // Height first; the width cap only bites on unusually wide marks. No upscale
+  // past the file's natural size.
   const scale = intrinsic
-    ? Math.min(MAX_WIDTH / intrinsic.width, MAX_HEIGHT / intrinsic.height, 1)
+    ? Math.min(TARGET_HEIGHT / intrinsic.height, MAX_WIDTH / intrinsic.width, 1)
     : null;
 
   const width =
@@ -59,7 +63,7 @@ export function EntryLogo({ src, org }: { src?: string; org: string }) {
       title={org}
       width={width}
       height={height}
-      style={{ width: width ?? "auto", height: height ?? MAX_HEIGHT }}
+      style={{ width: width ?? "auto", height: height ?? TARGET_HEIGHT }}
       className="object-contain"
     />
   );
