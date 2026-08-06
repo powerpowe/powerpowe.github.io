@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type CvSection = { id: string; label: string };
 
@@ -12,13 +12,10 @@ export type CvSection = { id: string; label: string };
  * where a jump list means nothing.
  */
 export function CvNav({ sections }: { sections: CvSection[] }) {
-  const active = useScrollSpy(sections.map((s) => s.id));
+  const { active, select } = useScrollSpy(sections.map((s) => s.id));
 
   return (
-    <nav
-      className="no-print hidden lg:block"
-      aria-label="CV 섹션"
-    >
+    <nav className="no-print hidden lg:block" aria-label="CV 섹션">
       <ul className="sticky top-24 space-y-1">
         {sections.map((section) => {
           const isActive = section.id === active;
@@ -26,6 +23,7 @@ export function CvNav({ sections }: { sections: CvSection[] }) {
             <li key={section.id}>
               <a
                 href={`#${section.id}`}
+                onClick={() => select(section.id)}
                 aria-current={isActive ? "true" : undefined}
                 className="group flex items-center py-1.5"
               >
@@ -54,40 +52,103 @@ export function CvNav({ sections }: { sections: CvSection[] }) {
   );
 }
 
-/** Id of the topmost section currently intersecting the viewport. */
+/**
+ * Id of the section the reader is currently in.
+ *
+ * Computed from scroll position rather than with IntersectionObserver. An
+ * observer answers "is this element inside a band?", which leaves a hole: when
+ * no section is in the band, there is no answer, and the highlight silently
+ * keeps its last value. That happens routinely on a short page — jump to the
+ * final section and the page hits its scroll limit before that section reaches
+ * a band near the top, so it never lights up.
+ *
+ * Asking "which section have I scrolled past?" always has an answer.
+ */
 function useScrollSpy(ids: string[]) {
   const [active, setActive] = useState<string>();
+  /**
+   * A click pins its own section until the reader scrolls for themselves.
+   *
+   * Without this, clicking one of the last entries on a short page highlights
+   * a different one: the page bottoms out, so by position the reader really is
+   * in the final section. True, but useless as feedback — the question the
+   * highlight answers right after a click is "what did I just pick?".
+   */
+  const pinned = useRef(false);
+
   // Re-run only when the set of ids actually changes, not on every render.
   const key = ids.join(",");
 
+  const select = useCallback((id: string) => {
+    pinned.current = true;
+    setActive(id);
+  }, []);
+
   useEffect(() => {
     const sectionIds = key ? key.split(",") : [];
-    const elements = sectionIds
-      .map((id) => document.getElementById(id))
-      .filter((el): el is HTMLElement => el !== null);
+    if (sectionIds.length === 0) return;
 
-    if (elements.length === 0) return;
+    let frame = 0;
 
-    const visible = new Set<string>();
+    const update = () => {
+      frame = 0;
+      if (pinned.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) visible.add(entry.target.id);
-          else visible.delete(entry.target.id);
-        }
-        // Document order, so the highest section on screen wins.
-        const first = sectionIds.find((id) => visible.has(id));
-        if (first) setActive(first);
-      },
-      // Biased to the upper half so a section lights up as it arrives rather
-      // than once it fills the screen.
-      { rootMargin: "-15% 0px -70% 0px" },
-    );
+      // The line a section must cross to count as current. Kept below the
+      // sticky header so a section is never "current" while hidden behind it.
+      const line = Math.max(120, window.innerHeight * 0.25);
 
-    for (const el of elements) observer.observe(el);
-    return () => observer.disconnect();
+      // Bottom of the page: the last section wins outright. Without this the
+      // trailing sections of a short page are unreachable, since the scroll
+      // runs out before they climb past the line.
+      const atBottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 2;
+
+      if (atBottom) {
+        setActive(sectionIds[sectionIds.length - 1]);
+        return;
+      }
+
+      // Otherwise the last section whose top has crossed the line, falling
+      // back to the first when the reader is still above all of them.
+      let current = sectionIds[0];
+      for (const id of sectionIds) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+        else break;
+      }
+      setActive(current);
+    };
+
+    // Coalesce the burst of scroll events a smooth jump produces.
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+
+    // Release the pin only on a gesture the reader made themselves. Plain
+    // scroll events are no good here: the smooth jump a click triggers fires
+    // them too, which would unpin immediately.
+    const unpin = () => {
+      pinned.current = false;
+      onScroll();
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    window.addEventListener("wheel", unpin, { passive: true });
+    window.addEventListener("touchmove", unpin, { passive: true });
+    window.addEventListener("keydown", unpin);
+    return () => {
+      if (frame) cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      window.removeEventListener("wheel", unpin);
+      window.removeEventListener("touchmove", unpin);
+      window.removeEventListener("keydown", unpin);
+    };
   }, [key]);
 
-  return active;
+  return { active, select };
 }
