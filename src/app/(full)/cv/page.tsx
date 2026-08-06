@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 
+import { CvNav, type CvSection } from "@/components/cv-nav";
 import { EntryLogo } from "@/components/entry-logo";
 import { PrintButton } from "@/components/print-button";
 import { SectionLabel } from "@/components/section-label";
@@ -84,14 +85,17 @@ function EntryList({ entries }: { entries: CvEntry[] }) {
 }
 
 function Section({
+  id,
   label,
   children,
 }: {
+  id: string;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <section className="print-break-avoid">
+    // scroll-mt clears the sticky header when the rail jumps here.
+    <section id={id} className="print-break-avoid scroll-mt-24">
       <SectionLabel>{label}</SectionLabel>
       {children}
     </section>
@@ -99,103 +103,125 @@ function Section({
 }
 
 export default function CvPage() {
+  // Built from the data so a section that renders nothing never shows up in
+  // the rail. Order must match the render order below.
+  const sections: CvSection[] = (
+    [
+      ["experience", "Experience", experience.length],
+      ["education", "Education", education.length],
+      ["projects", "Projects", projects.length],
+      ["publications", "Publications", publications.length],
+      ["skills", "Skills", skills.length],
+      ["awards", "Awards", awards.length],
+    ] as const
+  )
+    .filter(([, , count]) => count > 0)
+    .map(([id, label]) => ({ id, label }));
+
   return (
-    <div className="animate-fade-up space-y-14">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="font-label text-[0.6875rem] uppercase tracking-[0.2em] text-faint">
-            Curriculum Vitae
-          </p>
-          {/* The name is the heading here rather than "CV" so the printed
+    // The rail lives inside the page rather than the group layout because /about
+    // has no sections to index. `print-reset` collapses the grid for printing,
+    // where the rail is hidden anyway.
+    <div className="print-reset lg:grid lg:grid-cols-[7.5rem_minmax(0,1fr)] lg:gap-10">
+      <CvNav sections={sections} />
+
+      <div className="print-reset animate-fade-up space-y-14">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="font-label text-[0.6875rem] uppercase tracking-[0.2em] text-faint">
+              Curriculum Vitae
+            </p>
+            {/* The name is the heading here rather than "CV" so the printed
               document leads with it — the site header does not print. */}
-          <h1 className="display-tight mt-2 text-3xl font-semibold">
-            {site.name}
-          </h1>
-          <p className="mt-1.5 text-sm text-muted">
-            {site.role} · {site.affiliation}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 font-label text-xs text-faint">
-            <a href={`mailto:${site.email}`} className="hover:text-accent">
-              {site.email}
-            </a>
-            {site.links.github && (
-              <a href={site.links.github} className="hover:text-accent">
-                {site.links.github.replace(/^https?:\/\//, "")}
+            <h1 className="display-tight mt-2 text-3xl font-semibold">
+              {site.name}
+            </h1>
+            <p className="mt-1.5 text-sm text-muted">
+              {site.role} · {site.affiliation}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 font-label text-xs text-faint">
+              <a href={`mailto:${site.email}`} className="hover:text-accent">
+                {site.email}
               </a>
-            )}
-            {site.links.linkedin && (
-              <a href={site.links.linkedin} className="hover:text-accent">
-                {site.links.linkedin.replace(/^https?:\/\/(www\.)?/, "")}
-              </a>
-            )}
+              {site.links.github && (
+                <a href={site.links.github} className="hover:text-accent">
+                  {site.links.github.replace(/^https?:\/\//, "")}
+                </a>
+              )}
+              {site.links.linkedin && (
+                <a href={site.links.linkedin} className="hover:text-accent">
+                  {site.links.linkedin.replace(/^https?:\/\/(www\.)?/, "")}
+                </a>
+              )}
+            </div>
           </div>
-        </div>
-        <div className="flex shrink-0 items-start gap-4">
-          {/* Headshot. Unlike the Print button it is not `.no-print` — a Korean
+          <div className="flex shrink-0 items-start gap-4">
+            {/* Headshot. Unlike the Print button it is not `.no-print` — a Korean
               CV usually carries one on the printed copy too. Delete this block
               if you would rather not have a photo. */}
-          <Image
-            src={headshot}
-            alt={`${site.name} 프로필 사진`}
-            placeholder="blur"
-            sizes="96px"
-            className="hidden size-24 rounded-md border border-hairline object-cover sm:block"
-          />
-          <PrintButton />
+            <Image
+              src={headshot}
+              alt={`${site.name} 프로필 사진`}
+              placeholder="blur"
+              sizes="96px"
+              className="hidden size-24 rounded-md border border-hairline object-cover sm:block"
+            />
+            <PrintButton />
+          </div>
         </div>
+
+        <p className="max-w-prose leading-relaxed text-muted">{summary}</p>
+
+        {experience.length > 0 && (
+          <Section id="experience" label="Experience">
+            <EntryList entries={experience} />
+          </Section>
+        )}
+
+        {education.length > 0 && (
+          <Section id="education" label="Education">
+            <EntryList entries={education} />
+          </Section>
+        )}
+
+        {projects.length > 0 && (
+          <Section id="projects" label="Projects">
+            <WorkList works={projects} />
+          </Section>
+        )}
+
+        {publications.length > 0 && (
+          <Section id="publications" label="Publications">
+            <WorkList works={publications} />
+          </Section>
+        )}
+
+        {skills.length > 0 && (
+          <Section id="skills" label="Skills">
+            <ul className="space-y-4">
+              {skills.map((group) => (
+                <li
+                  key={group.group}
+                  className="print-break-avoid flex flex-col gap-1 sm:flex-row sm:gap-4"
+                >
+                  <span className="w-24 shrink-0 font-label text-xs leading-6 text-faint">
+                    {group.group}
+                  </span>
+                  <span className="text-sm leading-6 text-muted">
+                    {group.items.join(" · ")}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {awards.length > 0 && (
+          <Section id="awards" label="Awards">
+            <EntryList entries={awards} />
+          </Section>
+        )}
       </div>
-
-      <p className="max-w-prose leading-relaxed text-muted">{summary}</p>
-
-      {experience.length > 0 && (
-        <Section label="Experience">
-          <EntryList entries={experience} />
-        </Section>
-      )}
-
-      {education.length > 0 && (
-        <Section label="Education">
-          <EntryList entries={education} />
-        </Section>
-      )}
-
-      {projects.length > 0 && (
-        <Section label="Projects">
-          <WorkList works={projects} />
-        </Section>
-      )}
-
-      {publications.length > 0 && (
-        <Section label="Publications">
-          <WorkList works={publications} />
-        </Section>
-      )}
-
-      {skills.length > 0 && (
-        <Section label="Skills">
-          <ul className="space-y-4">
-            {skills.map((group) => (
-              <li
-                key={group.group}
-                className="print-break-avoid flex flex-col gap-1 sm:flex-row sm:gap-4"
-              >
-                <span className="w-24 shrink-0 font-label text-xs leading-6 text-faint">
-                  {group.group}
-                </span>
-                <span className="text-sm leading-6 text-muted">
-                  {group.items.join(" · ")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </Section>
-      )}
-
-      {awards.length > 0 && (
-        <Section label="Awards">
-          <EntryList entries={awards} />
-        </Section>
-      )}
     </div>
   );
 }

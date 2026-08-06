@@ -210,6 +210,19 @@ import portrait from "@public/images/portrait.jpg";   // @public → ./public
 사진 없이 가려면 [`cv/page.tsx`](src/app/(full)/cv/page.tsx) 의 `<Image>` 블록과
 import를 지우면 됩니다. `/about` 도 마찬가지입니다.
 
+### 섹션 점프 레일
+
+`/cv` 왼쪽에 섹션 목록이 고정돼 있습니다 ([`cv-nav.tsx`](src/components/cv-nav.tsx)).
+누르면 해당 섹션으로 이동하고, 스크롤하면 IntersectionObserver가 현재 섹션을
+하이라이트합니다.
+
+**목록은 데이터에서 자동으로 만들어집니다** — 비어 있는 섹션(`awards` 처럼)은
+본문에도 레일에도 안 나옵니다. 섹션을 추가하려면 `cv/page.tsx` 의 `sections`
+배열과 렌더 순서를 같이 맞춰주세요.
+
+`lg` 미만에서는 숨깁니다 (레일 폭이 본문을 깎아먹고, 좁은 화면에선 그냥 스크롤하는
+게 빠릅니다). 인쇄본에서도 빠집니다.
+
 ### 논문 · 프로젝트 (Publications / Projects)
 
 이 두 섹션은 **왼쪽에 티저 그림, 오른쪽에 설명** 구조입니다. 논문은 제목보다

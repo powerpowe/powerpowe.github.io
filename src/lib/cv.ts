@@ -86,7 +86,7 @@ export const education: CvEntry[] = [
     period: "2024 — 2026",
     title: "M.S. in Computer Science and Engineering",
     org: "성균관대학교",
-    location: "Korea",
+    location: "지도교수: 이지형",
         logo: "/images/logos/school_logo.png",
     logoHeight: 44,        // 기본값 28
   },
@@ -94,7 +94,7 @@ export const education: CvEntry[] = [
     period: "2020 — 2024",
     title: "B.S. in Mathematics & Applied Artificial Intelligence",
     org: "성균관대학교",
-    location: "Korea",
+    location: "",
   },
 
 
