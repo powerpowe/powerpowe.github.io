@@ -10,3 +10,6 @@ npm-debug.log*
 next-env.d.ts
 .vercel
 *.tsbuildinfo
+
+# Mirrored from content/blog/ by scripts/sync-blog-assets.mjs
+public/blog-assets/

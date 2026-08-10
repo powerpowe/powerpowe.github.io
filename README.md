@@ -19,6 +19,7 @@ npm run dev     # http://localhost:3000
 | `npm run build` | 정적 빌드 → `out/` |
 | `npx serve out` | 빌드 결과 미리보기 (`npm start` 는 정적 내보내기에선 안 씁니다) |
 | `npm run typecheck` | `tsc --noEmit` |
+| `npm run sync:assets` | `content/blog/` 의 그림을 `public/` 으로 복사 (dev·build가 자동 실행) |
 
 ## 먼저 고쳐야 할 것
 
@@ -152,30 +153,54 @@ draft: false
 
 ## 그림 넣기
 
-이미지 파일은 **`public/images/`** 에 둡니다. 그러면 `/images/파일명` 으로 참조됩니다.
+두 군데로 나뉩니다. **글에 쓰는 그림은 `content/blog/`** 에 글 파일과 나란히,
+**사이트 전반에서 쓰는 이미지**(프로필 사진, CV 로고, 논문 썸네일)는
+`public/images/` 에 둡니다.
 
 ### 글(MDX) 안에서
 
-일반 마크다운 문법 그대로입니다. 세 번째 인자(따옴표)는 **캡션**이 됩니다.
+**글에 쓰는 사진은 `content/blog/` 에, 글 파일 바로 옆에 둡니다.** 그리고 상대
+경로로 참조합니다.
 
-```mdx
-![대체 텍스트](/images/chart.png)
-![대체 텍스트](/images/chart.png "그림 아래 들어갈 캡션")
+```
+content/blog/
+  hyde.mdx
+  hyde-pipeline.png     ← 이 글의 그림
 ```
 
-뒤에서 자동으로 처리되는 것들:
+```mdx
+![대체 텍스트](./hyde-pipeline.png)
+![대체 텍스트](./hyde-pipeline.png "그림 아래 들어갈 캡션")
+```
 
-- **치수를 빌드 때 파일에서 직접 읽습니다**
-  ([`rehype-image-size.ts`](src/lib/rehype-image-size.ts)). 마크다운 이미지에는
-  크기 정보가 없어서 그냥 두면 이미지가 늦게 뜰 때 본문이 아래로 밀립니다(CLS).
-  치수를 알아야 `next/image` 가 자리를 미리 잡아둘 수 있습니다.
+글과 그림이 한자리에 있으면 글을 지울 때 딸린 그림도 같이 지우면 되고, 이 글이
+뭘 쓰는지 공용 이미지 폴더를 뒤지지 않아도 압니다.
+
+`content/` 는 서빙되지 않기 때문에(정적 내보내기에는 `public/` 만 들어갑니다)
+빌드 때 [`scripts/sync-blog-assets.mjs`](scripts/sync-blog-assets.mjs) 가
+`public/blog-assets/` 로 복사합니다. `npm run dev` 와 `npm run build` 앞에 자동으로
+붙어 있어서 따로 실행할 일은 없습니다.
+
+- **`public/blog-assets/` 는 생성물이라 gitignore 돼 있습니다.** 원본은
+  `content/blog/` 에 있고, 거기만 고치면 됩니다.
+- **dev 서버를 켠 채로 그림을 새로 추가하면 한 번 재시작**해야 합니다. 복사가
+  서버 시작 시점에 돌기 때문입니다.
+- 기존처럼 `/images/...` 절대 경로도 그대로 됩니다. 여러 글이 공유하는 그림은
+  `public/images/` 에 두세요.
+
+뒤에서 자동으로 처리되는 것들
+([`rehype-post-images.ts`](src/lib/rehype-post-images.ts)):
+
+- **상대 경로를 실제 서빙 경로로 바꿔줍니다** (`./x.png` → `/blog-assets/x.png`)
+- **치수를 빌드 때 파일에서 직접 읽어 박습니다.** 마크다운 이미지에는 크기 정보가
+  없어서, 없으면 이미지가 늦게 뜰 때 본문이 아래로 밀립니다(CLS)
 - **png·jpg·webp** → `next/image`. 정적 배포라 리사이징은 꺼져 있고
-  (`images.unoptimized`), 예약된 치수 + lazy loading만 적용됩니다. **원본을 적당한
-  크기로 줄여서 커밋하세요** — 올린 파일이 그대로 나갑니다
-- **svg** → 그냥 `<img>`. `next/image` 는 보안상 SVG를 막아두고 있고, 어차피
-  최적화할 게 없습니다
-- **외부 URL** → 그냥 `<img>`. 크기를 빌드 때 알 수 없어서요. 굳이 최적화하려면
-  `next.config.ts` 에 `images.remotePatterns` 를 열어야 합니다
+  (`images.unoptimized`) 예약된 치수 + lazy loading만 적용됩니다. **원본을 적당한
+  크기로 줄여서 커밋하세요** — 올린 파일이 그대로 나갑니다. 본문 칼럼이 700px
+  정도니 가로 1400px이면 충분합니다
+- **svg** → 그냥 `<img>` (치수는 동일하게 박힙니다). `next/image` 는 보안상 SVG를
+  막아두고 있고, 어차피 최적화할 게 없습니다
+- **외부 URL** → 그냥 `<img>`. 크기를 빌드 때 알 수 없어서요
 - 캡션을 쓰면 `<figure>` + `<figcaption>` 으로 감싸집니다
 
 `content/blog/hybrid-search-notes.mdx` 에 SVG·PNG 예시가 하나씩 들어 있습니다.

@@ -10,12 +10,12 @@ import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
 import remarkUnwrapImages from "remark-unwrap-images";
 
-import { rehypeImageSize } from "@/lib/rehype-image-size";
+import { rehypePostImages } from "@/lib/rehype-post-images";
 
 /**
- * Markdown images. `rehypeImageSize` has already stamped on the intrinsic
- * dimensions of anything living under `public/`, so those go through
- * `next/image` for responsive sources and reserved space. Remote images and
+ * Markdown images. `rehypePostImages` has already resolved figures that sit
+ * beside the post and stamped on their intrinsic dimensions, so those go
+ * through `next/image` with their space reserved. Remote images and
  * SVGs fall back to a plain tag — remote size is unknowable at build time, and
  * `next/image` refuses SVG unless `dangerouslyAllowSVG` is on (it isn't, and
  * an SVG gains nothing from the optimiser anyway).
@@ -45,8 +45,17 @@ function MdxImage({
       className="h-auto w-full"
     />
   ) : (
+    // Dimensions are passed here too when the plugin found them — an SVG takes
+    // this path, and without them it reserves no space and shifts the text.
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={src} alt={alt} loading="lazy" decoding="async" />
+    <img
+      src={src}
+      alt={alt}
+      width={width}
+      height={height}
+      loading="lazy"
+      decoding="async"
+    />
   );
 
   if (!title) return image;
@@ -96,7 +105,7 @@ export function Mdx({ source }: { source: string }) {
           ],
           rehypePlugins: [
             rehypeSlug,
-            rehypeImageSize,
+            rehypePostImages,
             [rehypePrettyCode, prettyCodeOptions],
             rehypeKatex,
           ],

@@ -13,10 +13,10 @@ export const site = {
   url: "https://powerpowe.github.io",
   locale: "ko_KR",
   description:
-    "검색과 언어 데이터를 다루는 AI 엔지니어입니다.",
+    "DBpia의 AI 엔지니어입니다.",
   // One or two sentences under the name on the home page. Supports <em>.
   tagline:
-    "검색과 언어 데이터를 다룹니다. 읽은 논문과 일하면서 배운 것들을 정리해 둡니다.",
+    "👋 Welcome to Byungjoon.lee blog",
   email: "2001lbj49@gmail.com",
   links: {
     github: "https://github.com/powerpowe",

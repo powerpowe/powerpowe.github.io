@@ -19,7 +19,7 @@ import {
 import { site } from "@/lib/site";
 
 // TODO: 본인 증명사진으로 교체하세요.
-import headshot from "@public/images/placeholder.png";
+import headshot from "@public/images/myphoto.jpg";
 
 export const metadata: Metadata = {
   title: "CV",
@@ -159,12 +159,16 @@ export default function CvPage() {
             {/* Headshot. Unlike the Print button it is not `.no-print` — a Korean
               CV usually carries one on the printed copy too. Delete this block
               if you would rather not have a photo. */}
+            {/* Its own proportions, not a square crop. Both axes are capped so
+                the header cannot be blown apart by whatever file is dropped in:
+                a 3:4 증명사진 ends up height-limited at 120x160, a wide photo
+                width-limited. Change the two caps to resize. */}
             <Image
               src={headshot}
               alt={`${site.name} 프로필 사진`}
               placeholder="blur"
-              sizes="96px"
-              className="hidden size-24 rounded-md border border-hairline object-cover sm:block"
+              sizes="160px"
+              className="hidden h-auto max-h-40 w-auto max-w-32 rounded-md border border-hairline sm:block"
             />
             <PrintButton />
           </div>

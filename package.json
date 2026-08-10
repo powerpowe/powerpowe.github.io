@@ -4,8 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "dev": "npm run sync:assets && next dev",
+    "build": "npm run sync:assets && next build",
+    "sync:assets": "node scripts/sync-blog-assets.mjs",
     "lint": "next lint",
     "typecheck": "next typegen && tsc --noEmit"
   },

@@ -6,7 +6,7 @@ import { site, socials } from "@/lib/site";
 
 // A static import gives next/image the dimensions for free and lets it build a
 // blur placeholder. Drop a file in public/images/ and point this at it.
-import portrait from "@public/images/placeholder.png";
+import portrait from "@public/images/myphoto.jpg";
 
 export const metadata: Metadata = {
   title: "About",
@@ -36,16 +36,10 @@ export default function AboutPage() {
       <div className="prose">
         <p>
           안녕하세요, {site.name}({site.nameKo})입니다. 현재 {site.affiliation}
-          에서 {site.role}로 일하고 있습니다.
+          에서 {site.role}로 일하고 있습니다. DBpia의 논문들을 Agent 시스템에 맞춘 AI-ready 데이터로 구조화하고, AI 서비스를 발전시킵니다.
         </p>
         <p>
-          학술 논문 검색 서비스를 만들면서 검색 품질, 색인 파이프라인, 메타데이터
-          정규화 같은 문제를 다룹니다. 논문을 읽고 나면 잊어버리는 게 아까워서
-          이곳에 정리해 두고 있습니다.
-        </p>
-        <p>
-          TODO: 이 문단을 본인 소개로 바꿔주세요. 어떤 문제에 관심이 있는지, 어떤
-          걸 만들어 왔는지, 어떤 이야기를 나누고 싶은지 적으면 좋습니다.
+          관심 분야: Vision-Language Model, OCR, Chunking, RAG, Multi-Agent System, Embedding, Reranking
         </p>
       </div>
 

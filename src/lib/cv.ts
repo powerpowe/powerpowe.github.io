@@ -64,19 +64,41 @@ export type CvWork = {
 export const highlightAuthors = ["Byungjoon Lee", "Byung-Joon Lee", "이병준"];
 
 export const summary =
-  "검색 시스템과 언어 데이터를 다루는 엔지니어입니다. 학술 데이터베이스 환경에서 검색 품질 개선과 데이터 파이프라인 구축을 맡고 있습니다.";
+  "석사 중엔 Domain-Agnostic AI, Vision-Language Model을 연구했으며, 현재는 경험을 살려 DBpia에서 Retrieval, Multi-Agent System, VLM 기반 Document Analysis를 다루는 AI Engineer로 일하고 있습니다. ";
 
 export const experience: CvEntry[] = [
   {
     period: "2026.01 — Present",
     title: "AI Engineer (전문연구요원)",
     org: "Nurimedia (DBpia)",
-    location: "Korea",
+    location: "",
     logo: "/images/logos/dbpia_logo.webp",
     points: [
       "실시간 Layout Detection 및 OCR 파이프라인 서빙",
       "VLM 기반 문서 정보 추출 추출 에이전트 구축 기반 AX",
       "대량의 내부 문서 구조화 파이프라인을 통한 DBpia 정보화",
+    ],
+  },
+  {
+    period: "2023.06 — 2026.01",
+    title: "Graduate/Undergraduate Researcher",
+    org: "SKKU Information & Intelligence System Laboratory",
+    location: "",
+    logo: "/images/logos/iislab_logo.png",
+        logoHeight: 44,        // 기본값 28
+    points: [
+      "연구 분야: Domain Adaptation · Continual Learning · Vision-Language Model",
+      "삼성전자 산학협력 수행: 마스크 패턴에서 SEM 이미지 생성, CD 자동 측정 모델 개발 ",
+      "국제학회 논문 3편 게재 (CVPR, BMVC 등)",
+    ],
+  },
+    {
+    period: "2022.06 — 2023.04",
+    title: "Undergraduate Researcher",
+    org: "SKKU Machine Intelligence & Data Science Laboratory",
+    location: "",
+    points: [
+      "헬스케어 기업 산학협력 수행: 심전도 기반 우울증 탐지 모델 개발",
     ],
   },
 ];

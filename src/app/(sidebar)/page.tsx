@@ -20,8 +20,7 @@ export default function LandingPage() {
           {site.tagline}
         </h1>
         <p className="mt-4 leading-relaxed text-muted">
-          {site.affiliation}에서 {site.role}로 일합니다. 읽은 논문과 일하면서
-          배운 것들을 여기에 정리합니다.
+          읽은 논문, 일하면서 경험한 것들, 그리고 일상을 정리합니다.
         </p>
 
         <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
