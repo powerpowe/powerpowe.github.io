@@ -110,7 +110,12 @@ function readPost(slug) {
   };
 }
 
-function writePost({ slug, title, summary, date, tags, draft, body }) {
+/**
+ * Writes a post. `oldSlug` is the name it was loaded under: when the slug has
+ * been edited, the previous file is removed instead of being left behind as a
+ * duplicate the author never sees.
+ */
+function writePost({ slug, oldSlug, title, summary, date, tags, draft, body }) {
   const clean = safeSlug(slug);
   if (!clean) throw new Error("슬러그가 비어 있습니다");
   if (!title?.trim()) throw new Error("제목이 필요합니다");
@@ -136,6 +141,22 @@ function writePost({ slug, title, summary, date, tags, draft, body }) {
 
   fs.mkdirSync(CONTENT, { recursive: true });
   fs.writeFileSync(path.join(CONTENT, `${clean}.mdx`), `${front}\n${body ?? ""}`);
+
+  const previous = safeSlug(oldSlug ?? "");
+  if (previous && previous !== clean) {
+    const stale = path.join(CONTENT, `${previous}.mdx`);
+    if (stale.startsWith(CONTENT) && fs.existsSync(stale)) fs.rmSync(stale);
+  }
+  return clean;
+}
+
+function deletePost(slug) {
+  const clean = safeSlug(slug);
+  const file = path.join(CONTENT, `${clean}.mdx`);
+  if (!clean || !file.startsWith(CONTENT) || !fs.existsSync(file)) {
+    throw new Error("글을 찾을 수 없습니다");
+  }
+  fs.rmSync(file);
   return clean;
 }
 
@@ -189,6 +210,10 @@ const server = http.createServer(async (req, res) => {
         : json(res, 404, { error: "글을 찾을 수 없습니다" });
     }
 
+    if (req.method === "DELETE" && url.pathname === "/api/post") {
+      return json(res, 200, { slug: deletePost(url.searchParams.get("slug") ?? "") });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/post") {
       const slug = writePost(JSON.parse((await readBody(req)).toString("utf8")));
       return json(res, 200, { slug });
@@ -215,6 +240,20 @@ const server = http.createServer(async (req, res) => {
   } catch (err) {
     json(res, 400, { error: err.message ?? String(err) });
   }
+});
+
+// A raw EADDRINUSE stack trace reads as a crash, and the still-running old
+// instance keeps answering — so it looks like the new code simply did nothing.
+server.on("error", (err) => {
+  if (err.code === "EADDRINUSE") {
+    console.error(
+      `\n  ✗ 포트 ${PORT}이 이미 사용 중입니다.\n` +
+        `    글쓰기 서버가 이미 떠 있는지 확인하세요: http://localhost:${PORT}\n` +
+        `    (종료하려면 그 터미널에서 Ctrl+C)\n`,
+    );
+    process.exit(1);
+  }
+  throw err;
 });
 
 server.listen(PORT, HOST, () => {
