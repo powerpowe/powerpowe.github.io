@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "npm run sync:assets && next dev",
     "build": "npm run sync:assets && next build",
+    "write": "node scripts/write-server.mjs",
     "sync:assets": "node scripts/sync-blog-assets.mjs",
     "lint": "next lint",
     "typecheck": "next typegen && tsc --noEmit"

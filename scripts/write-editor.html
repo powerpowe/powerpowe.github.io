@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>글쓰기</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<style>
+  /* Mirrors the site's tokens so the preview reads close to the real thing. */
+  :root {
+    --bg: #fff; --surface: #f4f5f7; --fg: #0f1115; --muted: #565f6c;
+    --faint: #8a919d; --line: #e4e7eb; --accent: #4c46d6;
+    --sans: "Pretendard Variable", -apple-system, system-ui, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0b0d10; --surface: #14171c; --fg: #e6e9ee; --muted: #98a1af;
+      --faint: #6b7482; --line: #222831; --accent: #a8a2ff;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--fg); font-family: var(--sans);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  button, input, textarea, select { font: inherit; color: inherit; }
+
+  /* --- header ------------------------------------------------------------ */
+  header { border-bottom: 1px solid var(--line); padding: 10px 16px; flex: none; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row + .row { margin-top: 8px; }
+  input[type=text], input[type=date], select {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 9px; min-width: 0;
+  }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  #title { flex: 1; min-width: 220px; font-size: 15px; font-weight: 600; }
+  #summary { flex: 1; min-width: 220px; }
+  label.check { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; color: var(--muted); }
+  .grow { flex: 1; }
+  .btn {
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    padding: 6px 12px; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { opacity: .9; color: #fff; }
+  #status { font-family: var(--mono); font-size: 12px; color: var(--faint); }
+  #status.ok { color: #2d8a5f; } #status.err { color: #c0392b; }
+  .hint { font-family: var(--mono); font-size: 11px; color: var(--faint); }
+
+  /* --- toolbar ----------------------------------------------------------- */
+  #toolbar {
+    display: flex; gap: 2px; flex-wrap: wrap; padding: 6px 10px;
+    border-bottom: 1px solid var(--line); flex: none; align-items: center;
+  }
+  #toolbar button {
+    background: none; border: 0; border-radius: 5px; padding: 5px 9px;
+    cursor: pointer; color: var(--muted); font-size: 13px; min-width: 30px;
+  }
+  #toolbar button:hover { background: var(--surface); color: var(--fg); }
+  #toolbar .sep { width: 1px; height: 18px; background: var(--line); margin: 0 5px; }
+
+  /* --- panes ------------------------------------------------------------- */
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  #editor, #preview { min-height: 0; overflow: auto; }
+  #editor {
+    border: 0; border-right: 1px solid var(--line); resize: none;
+    padding: 20px 22px; background: var(--bg); font-family: var(--mono);
+    font-size: 13.5px; line-height: 1.75; tab-size: 2;
+  }
+  #preview { padding: 20px 26px; }
+  body.dragging #editor { outline: 2px dashed var(--accent); outline-offset: -8px; }
+
+  /* --- preview typography ------------------------------------------------ */
+  #preview { font-size: 15px; line-height: 1.75; word-break: keep-all; }
+  #preview > * + * { margin-top: 1.2em; }
+  #preview h1, #preview h2, #preview h3 { line-height: 1.35; letter-spacing: -.02em; }
+  #preview h1 { font-size: 1.7em; }
+  #preview h2 { font-size: 1.35em; margin-top: 1.9em; border-top: 1px solid var(--line); padding-top: .9em; }
+  #preview h3 { font-size: 1.12em; margin-top: 1.6em; }
+  #preview a { color: var(--accent); }
+  #preview img { max-width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
+  #preview figure { margin: 0; }
+  #preview figcaption, #preview em.cap { display: block; text-align: center; font-size: .82em; color: var(--faint); margin-top: .6em; }
+  #preview blockquote { margin: 0; border-left: 2px solid var(--accent); padding-left: 1em; color: var(--muted); }
+  #preview code { font-family: var(--mono); font-size: .87em; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: .1em .35em; }
+  #preview pre { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 1em; overflow-x: auto; }
+  #preview pre code { background: none; border: 0; padding: 0; }
+  #preview table { width: 100%; border-collapse: collapse; font-size: .95em; display: block; overflow-x: auto; }
+  #preview th, #preview td { border-bottom: 1px solid var(--line); padding: .55em .7em; text-align: left; }
+  #preview th { font-size: .8em; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
+  #preview ul, #preview ol { padding-left: 1.35em; }
+  #preview hr { border: 0; border-top: 1px solid var(--line); }
+
+  /* --- table popover ------------------------------------------------------ */
+  #tablePop {
+    position: absolute; z-index: 20; background: var(--bg); border: 1px solid var(--line);
+    border-radius: 8px; padding: 10px; box-shadow: 0 8px 24px rgb(0 0 0 / .12); display: none;
+  }
+  #tablePop.open { display: block; }
+  #grid { display: grid; grid-template-columns: repeat(6, 20px); gap: 3px; }
+  #grid div { width: 20px; height: 20px; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; }
+  #grid div.on { background: var(--accent); border-color: var(--accent); }
+  #gridLabel { font-family: var(--mono); font-size: 11px; color: var(--faint); margin-top: 7px; text-align: center; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="row">
+    <select id="postList" title="글 열기"><option value="">+ 새 글</option></select>
+    <input id="title" type="text" placeholder="제목" autocomplete="off">
+    <span id="status"></span>
+    <button class="btn primary" id="save">저장</button>
+  </div>
+  <div class="row">
+    <input id="slug" type="text" placeholder="슬러그 (URL)" style="width:190px" autocomplete="off">
+    <input id="summary" type="text" placeholder="한 줄 요약" autocomplete="off">
+    <input id="date" type="date" title="발행일">
+    <input id="tags" type="text" placeholder="태그, 쉼표로" style="width:170px" autocomplete="off">
+    <label class="check"><input id="draft" type="checkbox"> 초안</label>
+  </div>
+</header>
+
+<div id="toolbar">
+  <button data-md="h2" title="제목 2">H2</button>
+  <button data-md="h3" title="제목 3">H3</button>
+  <span class="sep"></span>
+  <button data-md="bold" title="굵게 (Ctrl+B)"><b>B</b></button>
+  <button data-md="italic" title="기울임 (Ctrl+I)"><i>I</i></button>
+  <button data-md="code" title="인라인 코드">&lt;/&gt;</button>
+  <span class="sep"></span>
+  <button data-md="ul" title="목록">≡</button>
+  <button data-md="ol" title="번호 목록">1.</button>
+  <button data-md="quote" title="인용">&ldquo;</button>
+  <span class="sep"></span>
+  <button data-md="link" title="링크 (Ctrl+K)">🔗</button>
+  <button id="tableBtn" title="표">⊞ 표</button>
+  <button id="imageBtn" title="이미지 올리기">🖼 이미지</button>
+  <span class="sep"></span>
+  <button data-md="codeblock" title="코드 블록">코드</button>
+  <button data-md="math" title="수식">∑</button>
+  <button data-md="hr" title="구분선">―</button>
+  <span class="grow"></span>
+  <span class="hint">이미지는 드래그앤드롭 · 붙여넣기(Ctrl+V)도 됩니다</span>
+</div>
+
+<main>
+  <textarea id="editor" spellcheck="false" placeholder="여기에 글을 씁니다. 마크다운 그대로 쓰면 됩니다."></textarea>
+  <div id="preview"></div>
+</main>
+
+<div id="tablePop">
+  <div id="grid"></div>
+  <div id="gridLabel">0 × 0</div>
+</div>
+
+<input type="file" id="filePicker" accept="image/*" multiple hidden>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@14.1.3/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const ed = $("editor");
+let dirty = false;
+
+// --- status ----------------------------------------------------------------
+let statusTimer;
+function say(msg, kind = "") {
+  $("status").textContent = msg;
+  $("status").className = kind;
+  clearTimeout(statusTimer);
+  if (msg) statusTimer = setTimeout(() => ($("status").textContent = ""), 4000);
+}
+
+// --- preview ---------------------------------------------------------------
+marked.setOptions({ gfm: true, breaks: false });
+
+function render() {
+  let src = ed.value;
+
+  // Match the site: a markdown title on an image becomes a caption.
+  src = src.replace(/!\[([^\]]*)\]\(([^)\s]+)\s+"([^"]*)"\)/g,
+    (_, alt, url, cap) => `![${alt}](${url})\n<em class="cap">${cap}</em>`);
+  // Relative post images are served by this tool from content/blog/.
+  src = src.replace(/\]\(\.\//g, "](/blog-assets/");
+
+  $("preview").innerHTML = marked.parse(src);
+  try {
+    renderMathInElement($("preview"), {
+      delimiters: [
+        { left: "$$", right: "$$", display: true },
+        { left: "$", right: "$", display: false },
+      ],
+      throwOnError: false,
+    });
+  } catch {}
+}
+
+let renderTimer;
+ed.addEventListener("input", () => {
+  dirty = true;
+  clearTimeout(renderTimer);
+  renderTimer = setTimeout(render, 150);
+});
+
+// Keep the two panes roughly together while scrolling.
+ed.addEventListener("scroll", () => {
+  const p = ed.scrollTop / Math.max(1, ed.scrollHeight - ed.clientHeight);
+  const pv = $("preview");
+  pv.scrollTop = p * (pv.scrollHeight - pv.clientHeight);
+});
+
+// --- editing helpers -------------------------------------------------------
+function replaceSelection(text, selectFrom = null, selectTo = null) {
+  const { selectionStart: s, selectionEnd: e } = ed;
+  ed.setRangeText(text, s, e, "end");
+  if (selectFrom !== null) ed.setSelectionRange(s + selectFrom, s + (selectTo ?? selectFrom));
+  ed.focus();
+  dirty = true;
+  render();
+}
+
+function wrap(before, after = before, placeholder = "") {
+  const { selectionStart: s, selectionEnd: e } = ed;
+  const sel = ed.value.slice(s, e) || placeholder;
+  ed.setRangeText(before + sel + after, s, e, "end");
+  if (!ed.value.slice(s, e)) {
+    ed.setSelectionRange(s + before.length, s + before.length + sel.length);
+  }
+  ed.focus();
+  dirty = true;
+  render();
+}
+
+/** Applies a prefix to every line the selection touches. */
+function prefixLines(prefix) {
+  const v = ed.value;
+  const start = v.lastIndexOf("\n", ed.selectionStart - 1) + 1;
+  let end = v.indexOf("\n", ed.selectionEnd);
+  if (end === -1) end = v.length;
+
+  const lines = v.slice(start, end).split("\n");
+  const numbered = prefix === "1. ";
+  const out = lines
+    .map((l, i) => (numbered ? `${i + 1}. ` : prefix) + l.replace(/^([#>\-*]+\s*|\d+\.\s*)/, ""))
+    .join("\n");
+
+  ed.setRangeText(out, start, end, "end");
+  ed.focus();
+  dirty = true;
+  render();
+}
+
+const ACTIONS = {
+  h2: () => prefixLines("## "),
+  h3: () => prefixLines("### "),
+  bold: () => wrap("**", "**", "굵게"),
+  italic: () => wrap("*", "*", "기울임"),
+  code: () => wrap("`", "`", "코드"),
+  ul: () => prefixLines("- "),
+  ol: () => prefixLines("1. "),
+  quote: () => prefixLines("> "),
+  link: () => wrap("[", "](https://)", "링크 텍스트"),
+  hr: () => replaceSelection("\n\n---\n\n"),
+  math: () => wrap("$$\n", "\n$$", "a^2 + b^2 = c^2"),
+  codeblock: () => wrap("```python title=\"example.py\"\n", "\n```", "code"),
+};
+
+document.querySelectorAll("#toolbar button[data-md]").forEach((b) =>
+  b.addEventListener("click", () => ACTIONS[b.dataset.md]()));
+
+document.addEventListener("keydown", (e) => {
+  if (!(e.metaKey || e.ctrlKey)) return;
+  const k = e.key.toLowerCase();
+  if (k === "s") { e.preventDefault(); save(); }
+  else if (k === "b") { e.preventDefault(); ACTIONS.bold(); }
+  else if (k === "i") { e.preventDefault(); ACTIONS.italic(); }
+  else if (k === "k") { e.preventDefault(); ACTIONS.link(); }
+});
+
+// --- table popover ---------------------------------------------------------
+const ROWS = 6, COLS = 6;
+const grid = $("grid"), pop = $("tablePop");
+for (let i = 0; i < ROWS * COLS; i++) grid.appendChild(document.createElement("div"));
+
+function paint(r, c) {
+  [...grid.children].forEach((cell, i) => {
+    cell.classList.toggle("on", (i % COLS) < c && Math.floor(i / COLS) < r);
+  });
+  $("gridLabel").textContent = `${c} × ${r}`;
+}
+
+grid.addEventListener("mousemove", (e) => {
+  const i = [...grid.children].indexOf(e.target);
+  if (i >= 0) paint(Math.floor(i / COLS) + 1, (i % COLS) + 1);
+});
+grid.addEventListener("click", (e) => {
+  const i = [...grid.children].indexOf(e.target);
+  if (i < 0) return;
+  const rows = Math.floor(i / COLS) + 1, cols = (i % COLS) + 1;
+  const head = "| " + Array.from({ length: cols }, (_, n) => `제목${n + 1}`).join(" | ") + " |";
+  const rule = "|" + " --- |".repeat(cols);
+  const body = Array.from({ length: rows }, () => "| " + Array(cols).fill("   ").join("| ") + "|").join("\n");
+  replaceSelection(`\n${head}\n${rule}\n${body}\n\n`);
+  pop.classList.remove("open");
+});
+
+$("tableBtn").addEventListener("click", (e) => {
+  const r = e.currentTarget.getBoundingClientRect();
+  pop.style.left = `${r.left}px`;
+  pop.style.top = `${r.bottom + 6}px`;
+  pop.classList.toggle("open");
+  paint(0, 0);
+});
+document.addEventListener("click", (e) => {
+  if (!pop.contains(e.target) && e.target !== $("tableBtn")) pop.classList.remove("open");
+});
+
+// --- images ----------------------------------------------------------------
+async function upload(file) {
+  say(`올리는 중… ${file.name}`);
+  const res = await fetch("/api/upload", {
+    method: "POST",
+    headers: { "x-filename": encodeURIComponent(file.name) },
+    body: file,
+  });
+  const data = await res.json();
+  if (!res.ok) { say(data.error, "err"); return; }
+  replaceSelection(`\n![${file.name.replace(/\.[^.]+$/, "")}](./${data.file})\n`);
+  say(`content/blog/${data.file}`, "ok");
+}
+
+async function uploadAll(files) {
+  for (const f of files) if (f.type.startsWith("image/")) await upload(f);
+}
+
+$("imageBtn").addEventListener("click", () => $("filePicker").click());
+$("filePicker").addEventListener("change", (e) => uploadAll(e.target.files));
+
+["dragenter", "dragover"].forEach((t) =>
+  document.addEventListener(t, (e) => { e.preventDefault(); document.body.classList.add("dragging"); }));
+["dragleave", "drop"].forEach((t) =>
+  document.addEventListener(t, (e) => { e.preventDefault(); if (t === "drop" || e.target === document.documentElement) document.body.classList.remove("dragging"); }));
+document.addEventListener("drop", (e) => uploadAll(e.dataTransfer.files));
+
+// Screenshots pasted straight from the clipboard.
+ed.addEventListener("paste", (e) => {
+  const files = [...(e.clipboardData?.items ?? [])]
+    .filter((i) => i.kind === "file" && i.type.startsWith("image/"))
+    .map((i) => i.getAsFile())
+    .filter(Boolean);
+  if (files.length) { e.preventDefault(); uploadAll(files); }
+});
+
+// --- load / save -----------------------------------------------------------
+function slugify(s) {
+  return s.trim().toLowerCase().replace(/[^\w\s가-힣-]/g, "").replace(/\s+/g, "-").slice(0, 60);
+}
+
+$("title").addEventListener("input", () => {
+  if (!$("slug").dataset.touched) $("slug").value = slugify($("title").value);
+  dirty = true;
+});
+$("slug").addEventListener("input", () => { $("slug").dataset.touched = "1"; dirty = true; });
+["summary", "date", "tags", "draft"].forEach((id) =>
+  $(id).addEventListener("input", () => { dirty = true; }));
+
+async function refreshList(selected = "") {
+  const { posts } = await (await fetch("/api/posts")).json();
+  $("postList").innerHTML =
+    '<option value="">+ 새 글</option>' +
+    posts.map((p) => `<option value="${p.slug}">${p.draft ? "◦ " : ""}${p.title}</option>`).join("");
+  $("postList").value = selected;
+}
+
+async function load(slug) {
+  if (dirty && !confirm("저장하지 않은 변경이 있습니다. 버리고 여시겠어요?")) {
+    $("postList").value = $("slug").value;
+    return;
+  }
+  if (!slug) {
+    ["title", "slug", "summary", "tags"].forEach((id) => ($(id).value = ""));
+    delete $("slug").dataset.touched;
+    $("draft").checked = true;
+    $("date").value = new Date().toISOString().slice(0, 10);
+    ed.value = "";
+    dirty = false; render(); $("title").focus();
+    return;
+  }
+  const p = await (await fetch(`/api/post?slug=${encodeURIComponent(slug)}`)).json();
+  $("title").value = p.title; $("slug").value = p.slug; $("slug").dataset.touched = "1";
+  $("summary").value = p.summary; $("date").value = (p.date || "").slice(0, 10);
+  $("tags").value = p.tags; $("draft").checked = p.draft; ed.value = p.body;
+  dirty = false; render();
+}
+
+$("postList").addEventListener("change", (e) => load(e.target.value));
+
+async function save() {
+  const body = {
+    slug: $("slug").value, title: $("title").value, summary: $("summary").value,
+    date: $("date").value, tags: $("tags").value, draft: $("draft").checked,
+    body: ed.value,
+  };
+  const res = await fetch("/api/post", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) { say(data.error, "err"); return; }
+  dirty = false;
+  say(`저장됨 · content/blog/${data.slug}.mdx`, "ok");
+  refreshList(data.slug);
+}
+$("save").addEventListener("click", save);
+
+window.addEventListener("beforeunload", (e) => { if (dirty) e.preventDefault(); });
+
+refreshList().then(() => load(""));
+</script>
+</body>
+</html>
