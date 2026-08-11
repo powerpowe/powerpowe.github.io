@@ -99,6 +99,7 @@
   #preview th { font-size: .8em; text-transform: uppercase; letter-spacing: .06em; color: var(--faint); }
   #preview ul, #preview ol { padding-left: 1.35em; }
   #preview hr { border: 0; border-top: 1px solid var(--line); }
+  #preview .katex-block { overflow-x: auto; padding: .3em 0; }
 
   /* --- table popover ------------------------------------------------------ */
   #tablePop {
@@ -171,7 +172,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/marked@14.1.3/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
 <script>
 const $ = (id) => document.getElementById(id);
 const ed = $("editor");
@@ -209,6 +209,45 @@ function say(msg, kind = "") {
 // --- preview ---------------------------------------------------------------
 marked.setOptions({ gfm: true, breaks: false });
 
+/**
+ * Renders math *before* markdown, not after.
+ *
+ * marked runs first otherwise and mangles TeX on the way through: the two
+ * underscores in `\text{enc}_q ... \text{enc}_d` become an <em>, and `<v_q,
+ * v_d>` turns into a bogus tag. KaTeX then receives something that is no longer
+ * the formula. So each span is lifted out, replaced by an inert placeholder
+ * that markdown cannot touch, and pasted back rendered.
+ */
+function renderMath(src) {
+  const slots = [];
+  const stash = (tex, display) => {
+    let html;
+    try {
+      html = katex.renderToString(tex, { displayMode: display, throwOnError: false });
+    } catch (err) {
+      html = `<code style="color:#c0392b">${tex}</code>`;
+    }
+    slots.push(display ? `<div class="katex-block">${html}</div>` : html);
+    // Letters and digits only — anything with punctuation risks being eaten
+    // by markdown before it can be swapped back.
+    return `xMATHx${slots.length - 1}xENDx`;
+  };
+
+  // Fenced code first, so `$` inside a code sample is left alone.
+  const code = [];
+  src = src.replace(/```[\s\S]*?```|`[^`\n]*`/g, (m) => {
+    code.push(m);
+    return `xCODEx${code.length - 1}xENDx`;
+  });
+
+  src = src
+    .replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => stash(tex.trim(), true))
+    .replace(/(?<!\\)\$([^$\n]+?)(?<!\\)\$/g, (_, tex) => stash(tex.trim(), false));
+
+  src = src.replace(/xCODEx(\d+)xENDx/g, (_, i) => code[+i]);
+  return { src, slots };
+}
+
 function render() {
   updateCounts();
   let src = ed.value;
@@ -219,16 +258,12 @@ function render() {
   // Relative post images are served by this tool from content/blog/.
   src = src.replace(/\]\(\.\//g, "](/blog-assets/");
 
-  $("preview").innerHTML = marked.parse(src);
-  try {
-    renderMathInElement($("preview"), {
-      delimiters: [
-        { left: "$$", right: "$$", display: true },
-        { left: "$", right: "$", display: false },
-      ],
-      throwOnError: false,
-    });
-  } catch {}
+  const { src: masked, slots } = renderMath(src);
+  const html = marked
+    .parse(masked)
+    .replace(/xMATHx(\d+)xENDx/g, (_, i) => slots[+i] ?? "");
+
+  $("preview").innerHTML = html;
 }
 
 let renderTimer;
