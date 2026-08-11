@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import Image from "next/image";
-
 import { SectionLabel } from "@/components/section-label";
 import { site, socials } from "@/lib/site";
-
-// A static import gives next/image the dimensions for free and lets it build a
-// blur placeholder. Drop a file in public/images/ and point this at it.
-import portrait from "@public/images/myphoto.jpg";
 
 export const metadata: Metadata = {
   title: "About",
@@ -22,16 +16,6 @@ export default function AboutPage() {
       <div>
         <h1 className="display-tight text-3xl font-semibold">About</h1>
       </div>
-
-      {/* TODO: 본인 사진으로 교체하거나, 사진을 안 쓸 거면 이 블록을 지우세요. */}
-      <Image
-        src={portrait}
-        alt=""
-        placeholder="blur"
-        priority
-        sizes="(min-width: 640px) 640px, 100vw"
-        className="h-auto w-full rounded-md border border-hairline"
-      />
 
       <div className="prose">
         <p>
