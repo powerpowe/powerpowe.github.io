@@ -70,6 +70,11 @@
 
   /* --- panes ------------------------------------------------------------- */
   main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; min-height: 0; }
+  /* Preview folded away — the editor takes the full width. */
+  body.solo main { grid-template-columns: 1fr; }
+  body.solo #preview { display: none; }
+  body.solo #editor { border-right: 0; }
+  body.solo #previewBtn { color: var(--faint); opacity: .55; }
   #editor, #preview { min-height: 0; overflow: auto; }
   #editor {
     border: 0; border-right: 1px solid var(--line); resize: none;
@@ -153,6 +158,8 @@
   <button data-md="math" title="수식">∑</button>
   <button data-md="hr" title="구분선">―</button>
   <span class="grow"></span>
+  <button id="previewBtn" title="미리보기 접기 (Ctrl+\)">◧ 미리보기</button>
+  <span class="sep"></span>
   <span class="hint" id="counts"></span>
   <span class="sep"></span>
   <span class="hint">드롭 · Ctrl+V 로 이미지</span>
@@ -250,6 +257,10 @@ function renderMath(src) {
 
 function render() {
   updateCounts();
+  // Folded away: skip the markdown and KaTeX work entirely rather than
+  // rendering into a hidden pane on every keystroke.
+  if (document.body.classList.contains("solo")) return;
+
   let src = ed.value;
 
   // Match the site: a markdown title on an image becomes a caption.
@@ -359,9 +370,25 @@ const ACTIONS = {
 document.querySelectorAll("#toolbar button[data-md]").forEach((b) =>
   b.addEventListener("click", () => ACTIONS[b.dataset.md]()));
 
+const PREVIEW_KEY = "write.preview";
+
+function setPreview(on) {
+  document.body.classList.toggle("solo", !on);
+  try { localStorage.setItem(PREVIEW_KEY, on ? "1" : "0"); } catch {}
+  if (on) render();
+}
+
+$("previewBtn").addEventListener("click", () =>
+  setPreview(document.body.classList.contains("solo")));
+
+setPreview((() => {
+  try { return localStorage.getItem(PREVIEW_KEY) !== "0"; } catch { return true; }
+})());
+
 document.addEventListener("keydown", (e) => {
   if (!(e.metaKey || e.ctrlKey)) return;
   const k = e.key.toLowerCase();
+  if (e.key === "\\") { e.preventDefault(); setPreview(document.body.classList.contains("solo")); return; }
   if (k === "s") { e.preventDefault(); save(); }
   else if (k === "b") { e.preventDefault(); ACTIONS.bold(); }
   else if (k === "i") { e.preventDefault(); ACTIONS.italic(); }
