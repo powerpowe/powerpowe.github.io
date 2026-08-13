@@ -111,6 +111,59 @@ function readPost(slug) {
 }
 
 /**
+ * Puts display-math delimiters on their own lines.
+ *
+ * remark-math reads anything on the same line as an opening `$$` the way a code
+ * fence reads its language — as a meta string, which it then discards. And it
+ * only accepts a closing `$$` that sits alone on its line. So this:
+ *
+ *     $$\mathbb{E}[x]
+ *     = y$$
+ *
+ * silently loses its first line and never closes, swallowing the rest of the
+ * document. The failure is invisible while writing, which is why it is fixed
+ * here rather than left to be noticed later.
+ *
+ * A single-line `$$a = b$$` parses as *inline* math, so it renders at body size
+ * instead of as a centred block. That is almost never the intent, and it gets
+ * split out too.
+ *
+ * Leaves the body untouched if the delimiters do not pair up — a half-typed
+ * formula is the author's business, not something to guess at.
+ */
+function normalizeMath(body) {
+  // Code samples may legitimately contain `$$`; mask them first.
+  const code = [];
+  const masked = body.replace(
+    /```[\s\S]*?```|~~~[\s\S]*?~~~|`[^`\n]*`/g,
+    (m) => `\u0000C${code.push(m) - 1}\u0000`,
+  );
+
+  const parts = masked.split("$$");
+  if (parts.length % 2 === 0) return { body, changed: false, unbalanced: true };
+  if (parts.length === 1) return { body, changed: false, unbalanced: false };
+
+  const out = [parts[0]];
+  for (let i = 1; i < parts.length; i += 2) {
+    // A blank line before, or the block is absorbed into the paragraph above.
+    const head = out[out.length - 1];
+    if (head && !head.endsWith("\n\n")) {
+      out[out.length - 1] = head.replace(/\n*$/, "\n\n");
+    }
+    out.push(`$$\n${parts[i].trim()}\n$$`);
+
+    const tail = parts[i + 1] ?? "";
+    out.push(tail.startsWith("\n\n") ? tail : `\n\n${tail.replace(/^\n*/, "")}`);
+  }
+
+  const rebuilt = out
+    .join("")
+    .replace(/\u0000C(\d+)\u0000/g, (_, i) => code[+i]);
+
+  return { body: rebuilt, changed: rebuilt !== body, unbalanced: false };
+}
+
+/**
  * Writes a post. `oldSlug` is the name it was loaded under: when the slug has
  * been edited, the previous file is removed instead of being left behind as a
  * duplicate the author never sees.
@@ -139,15 +192,17 @@ function writePost({ slug, oldSlug, title, summary, date, tags, draft, body }) {
     .filter((l) => l !== null)
     .join("\n");
 
+  const math = normalizeMath(body ?? "");
+
   fs.mkdirSync(CONTENT, { recursive: true });
-  fs.writeFileSync(path.join(CONTENT, `${clean}.mdx`), `${front}\n${body ?? ""}`);
+  fs.writeFileSync(path.join(CONTENT, `${clean}.mdx`), `${front}\n${math.body}`);
 
   const previous = safeSlug(oldSlug ?? "");
   if (previous && previous !== clean) {
     const stale = path.join(CONTENT, `${previous}.mdx`);
     if (stale.startsWith(CONTENT) && fs.existsSync(stale)) fs.rmSync(stale);
   }
-  return clean;
+  return { slug: clean, body: math.body, mathFixed: math.changed, mathUnbalanced: math.unbalanced };
 }
 
 function deletePost(slug) {
@@ -215,8 +270,7 @@ const server = http.createServer(async (req, res) => {
     }
 
     if (req.method === "POST" && url.pathname === "/api/post") {
-      const slug = writePost(JSON.parse((await readBody(req)).toString("utf8")));
-      return json(res, 200, { slug });
+      return json(res, 200, writePost(JSON.parse((await readBody(req)).toString("utf8"))));
     }
 
     if (req.method === "POST" && url.pathname === "/api/upload") {

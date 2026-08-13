@@ -74,6 +74,7 @@ Task별 instruction은 다음과 같이 달라집니다.
 수학적 구성
 
 일반적인 dense retrieval은 query encoder와 document encoder가 만든 두 vector의 inner product를 similarity로 사용합니다.
+
 $$
 \text{sim}(q, d) = <\text{enc}_q(q), \text{enc}_d(d)> = <v_q, v_d>
 $$
@@ -81,49 +82,60 @@ $$
 위 수식에서 query $q$는 query vector로, document $d$는 document vector로 변환됩니다. 이 때, 문제는 relevance label 없이 서로 다른 두 encoder가 만든 vector를 같은 공간에 배치하고, 그 inner product가 relevance를 나타내도록 만드는 것이 어렵다는 점입니다.
 
 HyDE는 document encoder를 unsupervised contrastive encoder로 고정하고 이를 함수 f로 정의합니다.
+
 $$
 f = \operatorname{enc}_d = \operatorname{enc}_{\mathrm{con}}
 $$
 
 모든 corpus의 document는 동일한 f로 embedding됩니다.
 
-$$\mathbf{v}_d = f(d)
+$$
+\mathbf{v}_d = f(d)
 \quad
-\forall d \in D_1 \cup D_2 \cup \cdots \cup D_L$$
+\forall d \in D_1 \cup D_2 \cup \cdots \cup D_L
+$$
 
 이 단계는 query와 무관하게 offline으로 수행할 수 있습니다. 생성된 document vector를 이용한 실제 검색에는 standard MIPS(Maximum Inner Product Search) index를 그대로 사용할 수 있으므로, generative retrieval처럼 별도의 neural index나 constrained decoding을 설계할 필요가 없습니다.
 
 다음으로 instruction-following LM을 query와 instruction을 입력받는 함수 g로 정의합니다.
 
-$$g(q, \mathrm{INST}) = \operatorname{InstructLM}(q, \mathrm{INST})$$
+$$
+g(q, \mathrm{INST}) = \operatorname{InstructLM}(q, \mathrm{INST})
+$$
 
 함수 g가 만든 hypothetical document를 f에 통과시키면 query를 대신할 document-shaped vector가 만들어집니다. 논문은 생성 분포에서 얻는 vector의 expectation을 query representation으로 정의합니다.
 
-$$\mathbb{E}[\mathbf{v}_{q_{ij}}]
+$$
+\mathbb{E}[\mathbf{v}_{q_{ij}}]
 =
-\mathbb{E}\left[f\left(g(q_{ij}, \mathrm{INST}_i)\right)\right]$$
+\mathbb{E}\left[f\left(g(q_{ij}, \mathrm{INST}_i)\right)\right]
+$$
 
 실제 계산에서는 LLM으로 hypothetical document를 N개 sampling하고, 각 document embedding의 평균을 사용해 expectation을 근사합니다.
 
-$$\hat{\mathbf{v}}_{q_{ij}}
+$$
+\hat{\mathbf{v}}_{q_{ij}}
 =\frac{1}{N}
 \sum_{\hat{d}_k \sim g(q_{ij}, \mathrm{INST}_i)}
 f(d_k)=
 \frac{1}{N}
 \sum_{k=1}^{N}
-f(\hat{d}_k)$$
+f(\hat{d}_k)
+$$
 여러 sample을 평균내는 이유는 한 번의 생성에 포함된 우연한 표현이나 잘못된 세부 정보의 영향을 줄이기 위해서입니다.
 
 마지막 변형에서는 원래 query 자체도 하나의 hypothesis로 포함합니다.
 
-$$\hat{\mathbf{v}}_{q_{ij}}
+$$
+\hat{\mathbf{v}}_{q_{ij}}
 =
 \frac{1}{N+1}
 \left[
 \sum_{k=1}^{N} f(\hat{d}_k)
 +
 f(q_{ij})
-\right]$$
+\right]
+$$
 이 방식은 N개의 generated document embedding과 원 query embedding을 함께 평균합니다. 생성 문서가 relevance pattern과 풍부한 표현을 제공하는 동안, 원 query는 생성 과정에서 빠질 수 있는 핵심 lexical cue를 보존하는 역할을 할 수 있습니다.
 
 ### Training-free 결합

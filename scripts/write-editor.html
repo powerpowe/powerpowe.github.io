@@ -634,9 +634,27 @@ async function save() {
   const renamed = loadedSlug && loadedSlug !== data.slug;
   loadedSlug = data.slug;
   $("del").hidden = false;
+
+  // The server puts $$ on its own lines; pull the corrected text back so the
+  // textarea does not silently disagree with the file. Routed through
+  // insertText over a full selection, which keeps Ctrl+Z working.
+  if (data.mathFixed && typeof data.body === "string" && data.body !== ed.value) {
+    const at = ed.selectionStart;
+    ed.select();
+    insertText(data.body);
+    ed.setSelectionRange(Math.min(at, ed.value.length), Math.min(at, ed.value.length));
+  }
+
   markDirty(false);
   clearBackup();
-  say(renamed ? `이름 바꿔 저장됨 · ${data.slug}.mdx` : `저장됨 · ${data.slug}.mdx`, "ok");
+
+  const note = data.mathUnbalanced
+    ? " · ⚠ $$ 짝이 안 맞아 수식 정리를 건너뜀"
+    : data.mathFixed
+      ? " · 수식 $$ 를 제 줄로 정리함"
+      : "";
+  say((renamed ? `이름 바꿔 저장됨 · ${data.slug}.mdx` : `저장됨 · ${data.slug}.mdx`) + note,
+      data.mathUnbalanced ? "err" : "ok");
   refreshList(data.slug);
 }
 $("save").addEventListener("click", save);
