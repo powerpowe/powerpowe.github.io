@@ -12,8 +12,8 @@ export const site = {
   affiliation: "Nurimedia (DBpia)",
   url: "https://powerpowe.github.io",
   locale: "ko_KR",
-  description:
-    "DBpia의 AI 엔지니어입니다.",
+  // Shown as the search-result snippet and in link previews. Not in the tab.
+  description: "AI 기술 리뷰와 일상을 올리는 블로그입니다.",
   // One or two sentences under the name on the home page. Supports <em>.
   tagline:
     "👋 Welcome to Byungjoon.lee blog",

@@ -36,7 +36,9 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
   title: {
-    default: `${site.name} — ${site.description}`,
+    // The tab shows the name alone; the description belongs in the meta tag,
+    // where search results and link previews read it.
+    default: site.name,
     template: `%s · ${site.name}`,
   },
   description: site.description,
